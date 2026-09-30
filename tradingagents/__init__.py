@@ -22,4 +22,8 @@ __all__ = [
     "LayaRouter",
     "JEVRouter",
     "UnifiedRouter",
+    "AlpacaExchange",
 ]
+
+from tradingagents.alpaca_integration import AlpacaExchange
+

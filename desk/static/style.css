@@ -124,6 +124,18 @@ body {
     border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
+.badge-alpaca {
+    background: rgba(245, 158, 11, 0.15);
+    color: var(--color-amber);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-alpaca.connected {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--color-green);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .dot-online {
     width: 7px;
     height: 7px;

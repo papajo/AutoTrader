@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from tradingagents.laya_integration.config import LayaConfig
 from tradingagents.laya_integration.gates import LayaGates
+from tradingagents.alpaca_integration import AlpacaExchange
 
 logger = logging.getLogger("DeskServer")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
@@ -129,6 +130,16 @@ class LiveDeskState:
         # Gate coordinator
         self.laya_gates = LayaGates(config=LayaConfig())
 
+        # Alpaca Paper Trading Client
+        self.alpaca = AlpacaExchange()
+        if self.alpaca.is_connected():
+            acct = self.alpaca.get_account_info()
+            self.portfolio_cash = acct.get("cash", self.portfolio_cash)
+            self.initial_capital = acct.get("equity", self.initial_capital)
+            alp_pos = self.alpaca.get_positions()
+            if alp_pos:
+                self.positions = {p["symbol"]: p for p in alp_pos}
+
     def get_unrealized_pnl(self) -> float:
         total = 0.0
         for pos in self.positions.values():
@@ -143,9 +154,10 @@ class LiveDeskState:
         invested = sum(pos["quantity"] * self.tickers.get(pos["symbol"], {}).get("price", pos["avg_price"]) for pos in self.positions.values())
         nav = self.portfolio_cash + invested
         total_pnl = self.realized_pnl + unrealized
+        alpaca_info = self.alpaca.get_account_info()
         return {
-            "net_account_value": round(nav, 2),
-            "cash": round(self.portfolio_cash, 2),
+            "net_account_value": round(nav, 2) if not self.alpaca.is_connected() else alpaca_info.get("equity", round(nav, 2)),
+            "cash": round(self.portfolio_cash, 2) if not self.alpaca.is_connected() else alpaca_info.get("cash", round(self.portfolio_cash, 2)),
             "invested": round(invested, 2),
             "realized_pnl": round(self.realized_pnl, 2),
             "unrealized_pnl": round(unrealized, 2),
@@ -155,6 +167,11 @@ class LiveDeskState:
             "status": "HALTED" if self.is_killed else ("RUNNING" if self.is_running else "PAUSED"),
             "open_positions_count": len(self.positions),
             "open_orders_count": len([o for o in self.orders if o.get("status") == "pending"]),
+            "alpaca_connected": self.alpaca.is_connected(),
+            "alpaca_account": alpaca_info.get("account_number", "SIMULATED"),
+            "alpaca_status": alpaca_info.get("status", "SIMULATED"),
+            "alpaca_buying_power": alpaca_info.get("buying_power", 200_000.0),
+            "alpaca_base_url": self.alpaca.base_url,
         }
 
     def update_ticks(self) -> List[Dict[str, Any]]:
@@ -254,7 +271,40 @@ class LiveDeskState:
                 self.orders.insert(0, order_rec)
                 return order_rec
 
-        # Execute fill
+        # Execute fill via Alpaca Paper Trading if connected, else simulator
+        if self.alpaca.is_connected():
+            try:
+                alp_res = self.alpaca.place_order(
+                    symbol=sym,
+                    side=req.side,
+                    quantity=req.quantity,
+                    order_type=req.order_type,
+                )
+                # Synchronize live positions & account balance
+                alp_positions = self.alpaca.get_positions()
+                self.positions = {p["symbol"]: p for p in alp_positions}
+                acct = self.alpaca.get_account_info()
+                self.portfolio_cash = acct.get("cash", self.portfolio_cash)
+
+                order_rec = {
+                    "order_id": alp_res.get("order_id", f"ALP-{int(time.time()*1000)}"),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "symbol": sym,
+                    "side": req.side,
+                    "quantity": req.quantity,
+                    "price": alp_res.get("price", price),
+                    "status": alp_res.get("status", "filled"),
+                    "source": "alpaca_paper",
+                    "reason": "Submitted to Alpaca Paper Trading",
+                    "gate_decision": gate_decision,
+                }
+                self.orders.insert(0, order_rec)
+                return order_rec
+            except Exception as e:
+                logger.error(f"Alpaca order submission failed: {e}")
+                raise HTTPException(status_code=502, detail=f"Alpaca Paper Error: {e}")
+
+        # Local Paper Simulator Fallback
         if req.side.lower() == "buy":
             if self.portfolio_cash < cost:
                 raise HTTPException(status_code=400, detail=f"Insufficient cash: require ${cost:.2f}, have ${self.portfolio_cash:.2f}")
@@ -297,7 +347,8 @@ class LiveDeskState:
             "quantity": req.quantity,
             "price": price,
             "status": "filled",
-            "reason": "Executed via Live Desk",
+            "source": "local_simulator",
+            "reason": "Executed in Local Paper Simulator",
             "gate_decision": gate_decision,
         }
         self.orders.insert(0, order_rec)
@@ -309,6 +360,25 @@ class LiveDeskState:
         if sym not in self.positions:
             raise HTTPException(status_code=404, detail=f"No open position found for {sym}")
         pos = self.positions[sym]
+
+        if self.alpaca.is_connected():
+            self.alpaca.close_position(sym)
+            alp_pos = self.alpaca.get_positions()
+            self.positions = {p["symbol"]: p for p in alp_pos}
+            order_rec = {
+                "order_id": f"ALP-CLOSE-{int(time.time()*1000)}",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "symbol": sym,
+                "side": "sell",
+                "quantity": pos["quantity"],
+                "price": self.get_price(sym) if hasattr(self, 'get_price') else pos.get("current_price", pos.get("avg_price", 100.0)),
+                "status": "closed",
+                "source": "alpaca_paper",
+                "reason": "Flattened via Alpaca Paper Trading",
+            }
+            self.orders.insert(0, order_rec)
+            return order_rec
+
         req = OrderRequest(
             symbol=sym,
             side="sell",
@@ -443,14 +513,20 @@ def create_app() -> FastAPI:
         })
         return res
 
+    @app.get("/api/alpaca/status")
+    async def get_alpaca_status():
+        return desk_state.alpaca.get_account_info()
+
     @app.post("/api/override/kill-switch")
     async def trigger_kill_switch():
         desk_state.is_killed = True
         desk_state.is_running = False
+        if desk_state.alpaca.is_connected():
+            desk_state.alpaca.cancel_all_orders()
         await manager.broadcast({
             "type": "system_alert",
             "level": "critical",
-            "message": "🚨 EMERGENCY KILL SWITCH ENGAGED! Automated execution and new orders HALTED.",
+            "message": "🚨 EMERGENCY KILL SWITCH ENGAGED! Automated execution and new orders HALTED. Any open orders cancelled.",
             "is_killed": True,
             "summary": desk_state.get_portfolio_summary(),
         })

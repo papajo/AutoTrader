@@ -158,6 +158,21 @@ function updateSummaryHeader(s) {
         badge.className = "badge badge-running";
         badgeText.innerText = "ENGINE: RUNNING";
     }
+
+    // Alpaca Paper Trading Badge
+    const alpacaBadge = document.getElementById("alpaca-status-badge");
+    const alpacaText = document.getElementById("alpaca-status-text");
+    if (alpacaBadge && alpacaText) {
+        if (s.alpaca_connected) {
+            alpacaBadge.className = "badge badge-alpaca connected";
+            alpacaText.innerText = `ALPACA: ${s.alpaca_status} (${s.alpaca_account})`;
+            alpacaBadge.title = `Connected to ${s.alpaca_base_url || 'Alpaca Paper'}\nBuying Power: $${formatCurrency(s.alpaca_buying_power)}`;
+        } else {
+            alpacaBadge.className = "badge badge-alpaca";
+            alpacaText.innerText = "ALPACA: SIMULATOR";
+            alpacaBadge.title = "Running in Local Paper Simulator.\nAdd APCA_API_KEY_ID & APCA_API_SECRET_KEY to .env to connect live.";
+        }
+    }
 }
 
 function renderPositions(positions) {
