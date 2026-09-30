@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoTrader | Live Execution Desk</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Top Navigation & Control Bar -->
+    <header class="header">
+        <div class="brand">
+            <div class="logo-icon">⚡</div>
+            <div class="brand-text">
+                <span class="title">AUTOTRADER</span>
+                <span class="subtitle">LIVE EXECUTION DESK</span>
+            </div>
+            <div id="engine-status-badge" class="badge badge-running">
+                <span class="pulse-dot"></span>
+                <span id="engine-status-text">ENGINE: RUNNING</span>
+            </div>
+            <div id="ws-status-badge" class="badge badge-ws">
+                <span id="ws-indicator" class="dot-online"></span>
+                <span id="ws-status-text">STREAM: CONNECTED</span>
+            </div>
+        </div>
+
+        <div class="header-metrics">
+            <div class="metric-card">
+                <span class="metric-label">NET ACCOUNT VALUE</span>
+                <span id="nav-val" class="metric-val">$100,000.00</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">CASH BALANCE</span>
+                <span id="cash-val" class="metric-val">$100,000.00</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">TOTAL P&amp;L</span>
+                <span id="total-pnl-val" class="metric-val pnl-pos">+$0.00 (+0.00%)</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">DAILY LOSS LIMIT</span>
+                <span id="daily-loss-val" class="metric-val">$0.00 / $1,000</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <a href="/reports/index.html" target="_blank" class="btn btn-secondary">
+                📊 Backtest Reports
+            </a>
+            <button id="btn-kill-switch" class="btn btn-danger" onclick="toggleKillSwitch()">
+                🚨 EMERGENCY KILL SWITCH
+            </button>
+        </div>
+    </header>
+
+    <!-- Marquee Watchlist Ticker Bar -->
+    <section class="ticker-bar" id="ticker-bar">
+        <!-- Dynamically rendered ticker cards -->
+    </section>
+
+    <!-- Main Live Desk Grid -->
+    <main class="main-grid">
+        <!-- Left Column: Positions & Orders -->
+        <section class="panel-col">
+            <!-- Open Positions -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>💼 ACTIVE POSITIONS</span>
+                        <span id="pos-count-badge" class="count-badge">0</span>
+                    </div>
+                    <span class="panel-hint">Mark-to-Market Real-Time</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ASSET</th>
+                                <th>QTY</th>
+                                <th>AVG PRICE</th>
+                                <th>CURRENT</th>
+                                <th>MARKET VALUE</th>
+                                <th>UNREALIZED P&amp;L</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-tbody">
+                            <tr><td colspan="7" class="empty-state">No open positions currently held.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Order History -->
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>📋 RECENT ORDERS &amp; EXECUTIONS</span>
+                        <span id="order-count-badge" class="count-badge">0</span>
+                    </div>
+                    <span class="panel-hint">Audited via Laya Gates</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>TIME</th>
+                                <th>ORDER ID</th>
+                                <th>SYMBOL</th>
+                                <th>SIDE</th>
+                                <th>QTY</th>
+                                <th>PRICE</th>
+                                <th>STATUS</th>
+                                <th>GATE AUDIT / REASON</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody">
+                            <tr><td colspan="8" class="empty-state">No orders executed in this session.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Laya Gates Telemetry & Trade Console -->
+        <section class="panel-col">
+            <!-- Laya & JEV Gate Inspector -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>🛡️ LAYA &amp; JEV GATE INSPECTOR</span>
+                        <span class="badge badge-ai">NON-AUTOREGRESSIVE ROUTER</span>
+                    </div>
+                    <span class="panel-hint">Avg Latency &lt; 0.05ms</span>
+                </div>
+                <div class="gate-grid" id="gate-cards-container">
+                    <!-- Gate 1: Preflight -->
+                    <div class="gate-card">
+                        <div class="gate-top">
+                            <span class="gate-name">Gate 1: Preflight</span>
+                            <span class="gate-tag">Regime &amp; Vol</span>
+                        </div>
+                        <div class="gate-status status-proceed" id="gate-1-status">PROCEED</div>
+                        <div class="gate-metric" id="gate-1-detail">Regime: mean_reversion | Vol: normal</div>
+                    </div>
+                    <!-- Gate 2: News Risk -->
+                    <div class="gate-card">
+                        <div class="gate-top">
+                            <span class="gate-name">Gate 2: News Risk</span>
+                            <span class="gate-tag">Macro Impact</span>
+                        </div>
+                        <div class="gate-status status-proceed" id="gate-2-status">PROCEED</div>
+                        <div class="gate-metric" id="gate-2-detail">Signal Quality: 0.85 | Normal bounds</div>
+                    </div>
+                    <!-- Gate 3: Thesis Quality -->
+                    <div class="gate-card">
+                        <div class="gate-top">
+                            <span class="gate-name">Gate 3: Thesis Quality</span>
+                            <span class="gate-tag">Analyst Agreement</span>
+                        </div>
+                        <div class="gate-status status-proceed" id="gate-3-status">PROCEED</div>
+                        <div class="gate-metric" id="gate-3-detail">Agreement: 1.00 | Conviction: 0.88</div>
+                    </div>
+                    <!-- Gate 4: Risk Compliance -->
+                    <div class="gate-card">
+                        <div class="gate-top">
+                            <span class="gate-name">Gate 4: Risk Compliance</span>
+                            <span class="gate-tag">Pre-Trade Check</span>
+                        </div>
+                        <div class="gate-status status-proceed" id="gate-4-status">PROCEED</div>
+                        <div class="gate-metric" id="gate-4-detail">Portfolio Risk: Safe | Limits OK</div>
+                    </div>
+                </div>
+
+                <div class="audit-stream-box">
+                    <div class="stream-title">Live Audit Trail Stream (audit_trail.jsonl)</div>
+                    <div class="stream-entries" id="audit-log-stream">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trader Execution & Overrides Console -->
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <span>🎮 TRADER CONTROLS &amp; OVERRIDES</span>
+                    </div>
+                    <div class="console-tabs">
+                        <button class="tab-btn active" onclick="switchTab('order-tab')">Manual Order</button>
+                        <button class="tab-btn" onclick="switchTab('cycle-tab')">Run Auto-Cycle</button>
+                        <button class="tab-btn" onclick="switchTab('risk-tab')">Risk Governor</button>
+                    </div>
+                </div>
+
+                <!-- Tab 1: Manual Order -->
+                <div id="order-tab" class="tab-content active">
+                    <form id="manual-order-form" onsubmit="submitManualOrder(event)" class="order-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="order-symbol">Symbol</label>
+                                <select id="order-symbol" class="form-input" onchange="updateOrderPricePreview()">
+                                    <option value="SPY">SPY (S&amp;P 500 ETF)</option>
+                                    <option value="AAPL">AAPL (Apple Inc.)</option>
+                                    <option value="NVDA">NVDA (Nvidia Corp.)</option>
+                                    <option value="BTC-USD">BTC-USD (Bitcoin)</option>
+                                    <option value="ETH-USD">ETH-USD (Ethereum)</option>
+                                    <option value="US10Y">US10Y (Treasury Bond)</option>
+                                    <option value="CL">CL (Crude Oil)</option>
+                                    <option value="GC">GC (Gold Futures)</option>
+                                    <option value="EURUSD">EURUSD (Euro FX)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="order-side">Side</label>
+                                <div class="side-selector">
+                                    <button type="button" id="side-buy-btn" class="side-btn active-buy" onclick="setOrderSide('buy')">BUY</button>
+                                    <button type="button" id="side-sell-btn" class="side-btn" onclick="setOrderSide('sell')">SELL</button>
+                                </div>
+                                <input type="hidden" id="order-side" value="buy">
+                            </div>
+                            <div class="form-group">
+                                <label for="order-qty">Quantity</label>
+                                <input type="number" id="order-qty" class="form-input" value="10" min="0.0001" step="any" required oninput="updateOrderPricePreview()">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="order-asset-class">Asset Class</label>
+                                <select id="order-asset-class" class="form-input">
+                                    <option value="stock">Stock / Equity</option>
+                                    <option value="etf">ETF</option>
+                                    <option value="crypto">Cryptocurrency</option>
+                                    <option value="bond">Bond / Fixed Income</option>
+                                    <option value="commodity">Commodity / Futures</option>
+                                    <option value="forex">Forex</option>
+                                    <option value="option">Option</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Estimated Value</label>
+                                <div id="est-value-display" class="est-val">$0.00</div>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label>
+                                    <input type="checkbox" id="order-validate-laya" checked>
+                                    <span>Verify via Laya Gate 4</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" id="btn-submit-order" class="btn btn-primary btn-block">
+                                ⚡ Place Order via Gate
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tab 2: Run Auto Cycle -->
+                <div id="cycle-tab" class="tab-content">
+                    <p style="font-size: 13px; color: var(--text-dim); margin-top: 0;">
+                        Trigger a multi-agent debate cycle across Technical, Fundamentals, Sentiment, and Macro analysts, evaluated by Laya Preflight, News Risk, Thesis Quality, and Risk Compliance gates.
+                    </p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cycle-symbol">Target Symbol</label>
+                            <select id="cycle-symbol" class="form-input">
+                                <option value="NVDA">NVDA (High Vol Momentum)</option>
+                                <option value="AAPL">AAPL (Mega-Cap Quality)</option>
+                                <option value="SPY">SPY (Broad Index)</option>
+                                <option value="BTC-USD">BTC-USD (Crypto Trend)</option>
+                                <option value="TSLA">TSLA (Disagreement Escalation Test)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="align-self: flex-end;">
+                            <button class="btn btn-ai btn-block" onclick="runAutoCycle()">
+                                🤖 Run Multi-Agent Cycle
+                            </button>
+                        </div>
+                    </div>
+                    <div id="cycle-output-box" class="cycle-box" style="display:none;">
+                        <div id="cycle-status-banner" class="cycle-banner">Running...</div>
+                        <pre id="cycle-log-text" class="cycle-pre"></pre>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Risk Governor -->
+                <div id="risk-tab" class="tab-content">
+                    <form onsubmit="updateRiskLimits(event)" class="order-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="cfg-max-loss">Max Daily Loss Limit ($)</label>
+                                <input type="number" id="cfg-max-loss" class="form-input" value="1000" step="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-cooldown">Trade Cooldown (sec)</label>
+                                <input type="number" id="cfg-cooldown" class="form-input" value="30" step="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="cfg-max-pos">Max Single Position ($)</label>
+                                <input type="number" id="cfg-max-pos" class="form-input" value="50000" step="1000">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-secondary">💾 Save Risk Parameters</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
