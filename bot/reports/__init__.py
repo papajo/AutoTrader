@@ -6,7 +6,6 @@ from bot.reports.viz_core import (
     render_svg_cost_waterfall,
     render_verdict_badge,
 )
-from bot.reports.build import ReportBuilder
 
 __all__ = [
     "render_svg_card",
@@ -15,3 +14,11 @@ __all__ = [
     "render_verdict_badge",
     "ReportBuilder",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy import of ReportBuilder to avoid runpy RuntimeWarning when executing with -m."""
+    if name == "ReportBuilder":
+        from bot.reports.build import ReportBuilder
+        return ReportBuilder
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
