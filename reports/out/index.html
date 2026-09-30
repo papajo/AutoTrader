@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AutoTrader: The 6 AI Trading Agents Report Dashboard</title>
+    <style>
+        body { background: #0b0f19; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 40px; }
+        .container { max-width: 1080px; margin: 0 auto; }
+        h1 { font-size: 32px; color: #f8fafc; }
+        .subtitle { font-size: 18px; color: #94a3b8; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .card { background: #131b2e; border: 1px solid #1e293b; border-radius: 8px; padding: 24px; text-decoration: none; color: inherit; transition: transform 0.15s; }
+        .card:hover { transform: translateY(-3px); border-color: #38bdf8; }
+        .card h2 { margin-top: 0; font-size: 20px; color: #f8fafc; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-bottom: 12px; }
+        .badge-yes { background: #15803d; color: white; }
+        .badge-maybe { background: #b45309; color: white; }
+        .badge-no { background: #b91c1c; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Autonomous AI Trading Agents: Strategy Results</h1>
+        <div class="subtitle">Six AI trading agents built, backtested, and honestly graded. Two make money, one is borderline, three are dead.</div>
+
+        <div class="grid">
+            <a href="orb.html" class="card">
+                <span class="badge badge-yes">VERDICT: YES</span>
+                <h2>Agent 1: Opening Range Breakout + Jev</h2>
+                <p style="color:#94a3b8;">15m range, 5m execution on 8 liquid US equities. Jev non-autoregressive classifier elevates performance to +0.110R per trade.</p>
+            </a>
+            <a href="insider.html" class="card">
+                <span class="badge badge-yes">VERDICT: YES</span>
+                <h2>Agent 2: Corporate Insider Filings</h2>
+                <p style="color:#94a3b8;">SEC Form 3/4/5 open-market officer purchases. K=10 portfolio delivering +63% CAGR out-of-sample with alpha t=+2.54.</p>
+            </a>
+            <a href="earnings_drift.html" class="card">
+                <span class="badge badge-yes">VERDICT: YES</span>
+                <h2>Agent 3: Post-Earnings Announcement Drift</h2>
+                <p style="color:#94a3b8;">40 mega-caps hedged 1:1 against SPY on 10-day holds. Sharpe 3.10 with negligible execution friction.</p>
+            </a>
+            <a href="overnight_futures.html" class="card">
+                <span class="badge badge-maybe">VERDICT: MAYBE</span>
+                <h2>Agent 4: Overnight Futures Reversal</h2>
+                <p style="color:#94a3b8;">Liquidity sweeps on index futures (MES, MNQ, M2K). Impressive on 2 years, but flat over 16-year CME history.</p>
+            </a>
+            <a href="news_scalp.html" class="card">
+                <span class="badge badge-no">VERDICT: NO</span>
+                <h2>Agent 5: Earnings Gap News Scalp</h2>
+                <p style="color:#94a3b8;">Reading headlines on 5m bars loses money. Two numbers off the price tape outperform model text reading.</p>
+            </a>
+            <a href="lunar_gann.html" class="card">
+                <span class="badge badge-no">VERDICT: NO</span>
+                <h2>Agent 6: Lunar Phase & Gann Geometry</h2>
+                <p style="color:#94a3b8;">Astronomical ephemeris tested against 30 shifted-calendar placebos. Demonstrates classic post-publication decay.</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
