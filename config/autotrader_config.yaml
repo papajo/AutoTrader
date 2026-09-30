@@ -1,0 +1,80 @@
+# ==============================================================================
+# Smart AutoTrader System Configuration: TradingAgents + Laya/JEV Control Layer
+# Multi-Asset Support: Stocks, Bonds, Options, Commodities, ETFs, Mutual Funds, Forex
+# ==============================================================================
+
+# Non-Autoregressive Decision Router:
+# Options: 'hybrid' (Laya primary with JEV fallback), 'laya', or 'jev'
+router_type: "hybrid"
+
+# Master Gate Activation
+laya_gates:
+  enabled: true
+  preflight_regime_gate: true
+  news_risk_gate: true
+  post_analyst_quality_gate: true
+  risk_compliance_gate: true
+
+# Decision Thresholds
+thresholds:
+  regime_skip_on_choppy: true
+  regime_skip_on_crisis: true
+  volatility_macro_only: 0.70
+  news_risk_macro_only: 0.85
+  news_signal_quality_min: 0.30
+  analyst_agreement_escalate: 0.60
+  thesis_conviction_min: 0.70
+  thesis_actionable_min: 0.70
+  acceptable_risk_reward_min: 0.65
+  violation_threshold: 0.50
+  reduce_size_factor: 0.50
+  laya_fallback_confidence: 0.65
+
+# Global Portfolio Risk Policy
+policy:
+  max_loss_per_day: 500.0
+  max_position_concentration: 0.15
+  max_leverage: 2.0
+  require_stop_loss: true
+
+# Multi-Asset Specific Risk Boundaries
+stock_risk:
+  max_position_concentration: 0.15
+  max_beta: 2.5
+  min_market_cap_usd: 100000000.0
+
+bond_risk:
+  max_duration_years: 10.0
+  min_credit_rating: "BBB-"
+  max_yield_spread_bps: 500.0
+
+option_risk:
+  max_portfolio_delta: 0.50
+  max_portfolio_vega: 250.0
+  max_portfolio_gamma: 0.10
+  min_days_to_expiration: 2
+  max_implied_volatility: 1.20
+
+commodity_risk:
+  max_contango_roll_pct: 0.06
+  prohibit_physical_delivery: true
+  min_days_before_notice: 5
+
+etf_risk:
+  max_tracking_error: 0.015
+  max_premium_discount_pct: 0.02
+  max_leverage_multiplier: 3.0
+
+mutual_fund_risk:
+  max_expense_ratio: 0.015
+  min_holding_period_days: 30
+  cutoff_buffer_minutes: 60
+
+forex_risk:
+  max_leverage: 30.0
+  max_pip_risk_per_trade: 50.0
+  max_currency_concentration: 0.30
+
+# Auditing and Metrics Telemetry
+audit_log_path: "audit_trail.jsonl"
+enable_metrics: true

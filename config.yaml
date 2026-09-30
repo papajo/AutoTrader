@@ -1,0 +1,24 @@
+# Exchange API Configuration
+api_key: "your_api_key_here"
+api_secret: "your_api_secret_here"
+api_passphrase: "your_passphrase_here"  # Optional: for Coinbase
+
+# Trading Parameters
+symbol: "BTC-USD"
+trade_quantity: 0.001  # Units to trade per order
+
+# Strategy Settings
+strategy_name: "simple_moving_average"
+
+# Risk Management
+stop_loss_percentage: 0.05  # 5% stop loss
+take_profit_percentage: 0.10  # 10% take profit
+max_daily_loss: 100.0  # Max loss per day in USD
+
+# Engine Settings
+poll_interval: 60  # Seconds between price checks
+trade_cooldown: 300  # Seconds between trades
+
+# Logging
+log_level: "INFO"
+log_file: "trader.log"
